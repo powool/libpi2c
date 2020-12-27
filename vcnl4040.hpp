@@ -119,132 +119,60 @@ public:
 	static const uint8_t VCNL4040_INT_FLAG_AWAY = (1 << 0);
 
 
-	vcnl4040(std::shared_ptr<i2cBus> bus_) : bus(bus_) {
-		if(!bus->connected(VCNL4040_ADDR))
-			throw i2cException("vncl4040 not responding - check i2c connections");
-		if(getID() != 0x0186)
-			throw i2cException("vncl4040 returned mismatching ID - check board");
-
-		setLEDCurrent(200); //Max IR LED current
-
-		setIRDutyCycle(40);				// Set to highest duty cycle
-
-		setProxIntegrationTime(8);		// Set to max integration
-
-		setProxResolution(16);			// Set to 16-bit output
-
-		enableSmartPersistance();		// Turn on smart presistance
-
-		powerOnProximity();				// Turn on prox sensing
-
-		//setAmbientIntegrationTime(VCNL4040_ALS_IT_80MS); //Keep it short
-		//powerOnAmbient(); //Turn on ambient sensing
-	}
+	vcnl4040(std::shared_ptr<i2cBus> bus_);
 
 	// Set the duty cycle of the IR LED. The higher the duty
 	// ratio, the faster the response time achieved with higher power
 	// consumption. For example, PS_Duty = 1/320, peak IRED current = 100 mA,
 	// averaged current consumption is 100 mA/320 = 0.3125 mA.
-	void setIRDutyCycle(uint16_t dutyValue) {
-		if(dutyValue > 320 - 1) dutyValue = VCNL4040_PS_DUTY_320;
-		else if(dutyValue > 160 - 1) dutyValue = VCNL4040_PS_DUTY_160;
-		else if(dutyValue > 80 - 1) dutyValue = VCNL4040_PS_DUTY_80;
-		else dutyValue = VCNL4040_PS_DUTY_40;
-
-		bitMask(VCNL4040_PS_CONF1, LOWER, VCNL4040_PS_DUTY_MASK, dutyValue);
-	}
+	void setIRDutyCycle(uint16_t dutyValue);
 
 	// Set the Prox interrupt persistance value
 	// The PS persistence function (PS_PERS, 1, 2, 3, 4) helps to avoid
 	// false trigger of the PS INT. It defines the amount of
 	// consecutive hits needed in order for a PS interrupt event to be triggered.
-	void setProxInterruptPersistance(uint8_t persValue) {
-		bitMask(VCNL4040_PS_CONF1, LOWER, VCNL4040_PS_PERS_MASK, persValue);
-	}
+	void setProxInterruptPersistance(uint8_t persValue);
 	//
 	// Set the Ambient interrupt persistance value
 	// The ALS persistence function (ALS_PERS, 1, 2, 4, 8) helps to avoid
 	// false trigger of the ALS INT. It defines the amount of
 	// consecutive hits needed in order for a ALS interrupt event to be triggered.
-	void setAmbientInterruptPersistance(uint8_t persValue)
-	{
-		bitMask(VCNL4040_ALS_CONF, LOWER, VCNL4040_ALS_PERS_MASK, persValue);
-	}
+	void setAmbientInterruptPersistance(uint8_t persValue);
 
-	void enableAmbientInterrupts(void) {
-		bitMask(VCNL4040_ALS_CONF, LOWER, VCNL4040_ALS_INT_EN_MASK, VCNL4040_ALS_INT_ENABLE);
-	}
+	void enableAmbientInterrupts(void);
 
-	void disableAmbientInterrupts(void) {
-		bitMask(VCNL4040_ALS_CONF, LOWER, VCNL4040_ALS_INT_EN_MASK, VCNL4040_ALS_INT_DISABLE);
-	}
+	void disableAmbientInterrupts(void);
 
 	// Power on or off the ambient light sensing portion of the sensor
-	void powerOnAmbient(void) {
-		bitMask(VCNL4040_ALS_CONF, LOWER, VCNL4040_ALS_SD_MASK, VCNL4040_ALS_SD_POWER_ON);
-	}
+	void powerOnAmbient(void);
 
-	void powerOffAmbient(void) {
-		bitMask(VCNL4040_ALS_CONF, LOWER, VCNL4040_ALS_SD_MASK, VCNL4040_ALS_SD_POWER_OFF);
-	}
+	void powerOffAmbient(void);
 
 	// Sets the integration time for the ambient light sensor
-	void setAmbientIntegrationTime(uint16_t timeValue)
-	{
-		if(timeValue > 640 - 1) timeValue = VCNL4040_ALS_IT_640MS;
-		else if(timeValue > 320 - 1) timeValue = VCNL4040_ALS_IT_320MS;
-		else if(timeValue > 160 - 1) timeValue = VCNL4040_ALS_IT_160MS;
-		else timeValue = VCNL4040_ALS_IT_80MS;
-
-		bitMask(VCNL4040_ALS_CONF, LOWER, VCNL4040_ALS_IT_MASK, timeValue);
-	}
+	void setAmbientIntegrationTime(uint16_t timeValue);
 
 	// Sets the integration time for the proximity sensor
-	void setProxIntegrationTime(uint8_t timeValue) {
-		if(timeValue > 8 - 1) timeValue = VCNL4040_PS_IT_8T;
-		else if(timeValue > 4 - 1) timeValue = VCNL4040_PS_IT_4T;
-		else if(timeValue > 3 - 1) timeValue = VCNL4040_PS_IT_3T;
-		else if(timeValue > 2 - 1) timeValue = VCNL4040_PS_IT_2T;
-		else timeValue = VCNL4040_PS_IT_1T;
-
-		bitMask(VCNL4040_PS_CONF1, LOWER, VCNL4040_PS_IT_MASK, timeValue);
-	}
+	void setProxIntegrationTime(uint8_t timeValue);
 
 	// Power on the prox sensing portion of the device
-	void powerOnProximity(void) {
-		bitMask(VCNL4040_PS_CONF1, LOWER, VCNL4040_PS_SD_MASK, VCNL4040_PS_SD_POWER_ON);
-	}
+	void powerOnProximity(void);
 
 	// Power off the prox sensing portion of the device
-	void powerOffProximity(void)
-	{
-		bitMask(VCNL4040_PS_CONF1, LOWER, VCNL4040_PS_SD_MASK, VCNL4040_PS_SD_POWER_OFF);
-	}
+	void powerOffProximity(void);
 
 	// Sets the proximity resolution
-	void setProxResolution(uint8_t resolutionValue) {
-		if(resolutionValue > 16 - 1) resolutionValue = VCNL4040_PS_HD_16_BIT;
-		else resolutionValue = VCNL4040_PS_HD_12_BIT;
-
-		bitMask(VCNL4040_PS_CONF2, UPPER, VCNL4040_PS_HD_MASK, resolutionValue);
-	}
+	void setProxResolution(uint8_t resolutionValue);
 
 	// Sets the proximity interrupt type
-	void setProxInterruptType(uint8_t interruptValue) {
-		bitMask(VCNL4040_PS_CONF2, UPPER, VCNL4040_PS_INT_MASK, interruptValue);
-	}
+	void setProxInterruptType(uint8_t interruptValue);
 
 	// Enable smart persistance
 	// To accelerate the PS response time, smart
 	// persistence prevents the misjudgment of proximity sensing
 	// but also keeps a fast response time.
-	void enableSmartPersistance(void) {
-		bitMask(VCNL4040_PS_CONF3, LOWER, VCNL4040_PS_SMART_PERS_MASK, VCNL4040_PS_SMART_PERS_ENABLE);
-	}
+	void enableSmartPersistance(void);
 
-	void disableSmartPersistance(void) {
-		bitMask(VCNL4040_PS_CONF3, LOWER, VCNL4040_PS_SMART_PERS_MASK, VCNL4040_PS_SMART_PERS_DISABLE);
-	}
+	void disableSmartPersistance(void);
 
 	// Enable active force mode
 	// An extreme power saving way to use PS is to apply PS active force mode.
@@ -252,26 +180,16 @@ public:
 	// enable the active force mode. This
 	// triggers a single PS measurement, which can be read from the PS result registers.
 	// VCNL4040 stays in standby mode constantly.
-	void enableActiveForceMode(void) {
-		bitMask(VCNL4040_PS_CONF3, LOWER, VCNL4040_PS_AF_MASK, VCNL4040_PS_AF_ENABLE);
-	}
+	void enableActiveForceMode(void);
 
-	void disableActiveForceMode(void) {
-		bitMask(VCNL4040_PS_CONF3, LOWER, VCNL4040_PS_AF_MASK, VCNL4040_PS_AF_DISABLE);
-	}
+	void disableActiveForceMode(void);
 
 	// Set trigger bit so sensor takes a force mode measurement and returns to standby
-	void takeSingleProxMeasurement(void) {
-		bitMask(VCNL4040_PS_CONF3, LOWER, VCNL4040_PS_TRIG_MASK, VCNL4040_PS_TRIG_TRIGGER);
-	}
+	void takeSingleProxMeasurement(void);
 
 	// Enable the white measurement channel
-	void enableWhiteChannel(void) {
-		bitMask(VCNL4040_PS_MS, UPPER, VCNL4040_WHITE_EN_MASK, VCNL4040_WHITE_ENABLE);
-	}
-	void disableWhiteChannel(void) {
-		bitMask(VCNL4040_PS_MS, UPPER, VCNL4040_WHITE_EN_MASK, VCNL4040_WHITE_ENABLE);
-	}
+	void enableWhiteChannel(void);
+	void disableWhiteChannel(void);
 
 	// Enable the proximity detection logic output mode
 	// When this mode is selected, the INT pin is pulled low when an object is
@@ -279,186 +197,76 @@ public:
 	// threshold) and is reset to high when the object moves away (value is
 	// below low threshold). Register: PS_THDH / PS_THDL
 	// define where these threshold levels are set.
-	void enableProxLogicMode(void) {
-		bitMask(VCNL4040_PS_MS, UPPER, VCNL4040_PS_MS_MASK, VCNL4040_PS_MS_ENABLE);
-	}
-
-	void disableProxLogicMode(void) {
-		bitMask(VCNL4040_PS_MS, UPPER, VCNL4040_PS_MS_MASK, VCNL4040_PS_MS_DISABLE);
-	}
+	void enableProxLogicMode(void);
+	void disableProxLogicMode(void);
 
 	// Set the IR LED sink current to one of 8 settings
-	void setLEDCurrent(uint8_t currentValue) {
-		if(currentValue > 200 - 1) currentValue = VCNL4040_LED_200MA;
-		else if(currentValue > 180 - 1) currentValue = VCNL4040_LED_180MA;
-		else if(currentValue > 160 - 1) currentValue = VCNL4040_LED_160MA;
-		else if(currentValue > 140 - 1) currentValue = VCNL4040_LED_140MA;
-		else if(currentValue > 120 - 1) currentValue = VCNL4040_LED_120MA;
-		else if(currentValue > 100 - 1) currentValue = VCNL4040_LED_100MA;
-		else if(currentValue > 75 - 1) currentValue = VCNL4040_LED_75MA;
-		else currentValue = VCNL4040_LED_50MA;
-
-		bitMask(VCNL4040_PS_MS, UPPER, VCNL4040_LED_I_MASK, currentValue);
-	}
+	void setLEDCurrent(uint8_t currentValue);
 
 	// Set the proximity sensing cancelation value - helps reduce cross talk
 	// with ambient light
-	void setProxCancellation(uint16_t cancelValue) {
-		writeCommand(VCNL4040_PS_CANC, cancelValue);
-	}
+	void setProxCancellation(uint16_t cancelValue);
 
 	// Value that ALS must go above to trigger an interrupt
-	void setALSHighThreshold(uint16_t threshold) {
-		writeCommand(VCNL4040_ALS_THDH, threshold);
-	}
+	void setALSHighThreshold(uint16_t threshold);
 
 	// Value that ALS must go below to trigger an interrupt
-	void setALSLowThreshold(uint16_t threshold) {
-		writeCommand(VCNL4040_ALS_THDL, threshold);
-	}
+	void setALSLowThreshold(uint16_t threshold);
 
 	// Value that Proximity Sensing must go above to trigger an interrupt
-	void setProxHighThreshold(uint16_t threshold) {
-		writeCommand(VCNL4040_PS_THDH, threshold);
-	}
+	void setProxHighThreshold(uint16_t threshold);
 
 	// Value that Proximity Sensing must go below to trigger an interrupt
-	void setProxLowThreshold(uint16_t threshold) {
-		writeCommand(VCNL4040_PS_THDL, threshold);
-	}
+	void setProxLowThreshold(uint16_t threshold);
 
 	// Read the Proximity value
-	uint16_t getProximity() {
-		return (readCommand(VCNL4040_PS_DATA));
-	}
+	uint16_t getProximity();
 
 	// Read the Ambient light value
-	uint16_t getAmbient() {
-		return (readCommand(VCNL4040_ALS_DATA));
-	}
+	uint16_t getAmbient();
 
 	// Read the White light value
-	uint16_t getWhite() {
-		return (readCommand(VCNL4040_WHITE_DATA));
-	}
+	uint16_t getWhite();
 
 	// Read the sensors ID
-	uint16_t getID() {
-		return (readCommand(VCNL4040_ID));
-	}
+	uint16_t getID();
 
 	// Returns true if the prox value rises above the upper threshold
-	bool isClose() {
-		uint8_t interruptFlags = readCommandUpper(VCNL4040_INT_FLAG);
-		return (interruptFlags & VCNL4040_INT_FLAG_CLOSE);
-	}
+	bool isClose();
 
 	// Returns true if the prox value drops below the lower threshold
-	bool isAway() {
-		uint8_t interruptFlags = readCommandUpper(VCNL4040_INT_FLAG);
-		return (interruptFlags & VCNL4040_INT_FLAG_AWAY);
-	}
+	bool isAway();
 
 	// Returns true if the prox value rises above the upper threshold
-	bool isLight() {
-		uint8_t interruptFlags = readCommandUpper(VCNL4040_INT_FLAG);
-		return (interruptFlags & VCNL4040_INT_FLAG_ALS_HIGH);
-	}
+	bool isLight();
 
 	// Returns true if the ALS value drops below the lower threshold
-	bool isDark() {
-		uint8_t interruptFlags = readCommandUpper(VCNL4040_INT_FLAG);
-		return (interruptFlags & VCNL4040_INT_FLAG_ALS_LOW);
-	}
+	bool isDark();
 
 	// Reads two consecutive bytes from a given 'command code' location
-	uint16_t readCommand(uint8_t commandCode) {
-#if 0
-		_i2cPort->beginTransmission(VCNL4040_ADDR);
-		_i2cPort->write(commandCode);
-		if (_i2cPort->endTransmission(false) != 0) // Send a restart command. Do not release bus.
-		{
-			return (0); // Sensor did not ACK
-		}
-
-		_i2cPort->requestFrom((uint8_t)VCNL4040_ADDR, (uint8_t)2);
-		if (_i2cPort->available())
-		{
-			uint8_t lsb = _i2cPort->read();
-			uint8_t msb = _i2cPort->read();
-		return ((uint16_t)msb << 8 | lsb);
-		}
-
-		return (0); //Sensor did not respond
-#endif
-		uint8_t bytes[2];
-		bus->setTarget(VCNL4040_ADDR);
-		bus->readRegisterWithRestart(commandCode, bytes, 2);
-
-		return ((uint16_t) bytes[1] << 8 | bytes[0]);
-	}
+	uint16_t readCommand(uint8_t commandCode);
 
 	// Write two bytes to a given command code location (8 bits)
-	bool writeCommand(uint8_t commandCode, uint16_t value) {
-		bus->setTarget(VCNL4040_ADDR);
-		uint8_t bytes[3];
-		bytes[0] = commandCode;
-		bytes[1] = value;
-		bytes[2] = value>>8;
-		bus->write(bytes, 3);
-
-		return false;
-	}
+	bool writeCommand(uint8_t commandCode, uint16_t value);
 
 	// Given a command code (address) write to the lower byte without affecting the upper byte
-	bool writeCommandLower(uint8_t commandCode, uint8_t newValue) {
-		uint16_t commandValue = readCommand(commandCode);
-		commandValue &= 0xFF00; // Remove lower 8 bits
-		commandValue |= (uint16_t)newValue; // Mask in
-		return (writeCommand(commandCode, commandValue));
-	}
+	bool writeCommandLower(uint8_t commandCode, uint8_t newValue);
 
 	// Given a command code (address) write to the upper byte without affecting the lower byte
-	bool writeCommandUpper(uint8_t commandCode, uint8_t newValue) {
-		uint16_t commandValue = readCommand(commandCode);
-		commandValue &= 0x00FF; //Remove upper 8 bits
-		commandValue |= (uint16_t)newValue << 8; //Mask in
-		return (writeCommand(commandCode, commandValue));
-	}
+	bool writeCommandUpper(uint8_t commandCode, uint8_t newValue);
 
 	// Given a command code (address) read the lower byte
-	uint8_t readCommandLower(uint8_t commandCode) {
-		uint16_t commandValue = readCommand(commandCode);
-		return (commandValue & 0xFF);
-	}
+	uint8_t readCommandLower(uint8_t commandCode);
 
 	// Given a command code (address) read the upper byte
-	uint8_t readCommandUpper(uint8_t commandCode) {
-		uint16_t commandValue = readCommand(commandCode);
-		return (commandValue >> 8);
-	}
+	uint8_t readCommandUpper(uint8_t commandCode);
 
 	// Given a register, read it, mask it, and then set the thing
 	// commandHeight is used to select between the upper or lower byte of command register
 	// Example:
 	// Write dutyValue into PS_CONF1, lower byte, using the Duty_Mask
 	// bitMask(VCNL4040_PS_CONF1, LOWER, VCNL4040_PS_DUTY_MASK, dutyValue);
-	void bitMask(uint8_t commandAddress, bool commandHeight, uint8_t mask, uint8_t thing) {
-		// Grab current register context
-		uint8_t registerContents;
-		if (commandHeight == LOWER) registerContents = readCommandLower(commandAddress);
-		else registerContents = readCommandUpper(commandAddress);
-
-		// Zero-out the portions of the register we're interested in
-		registerContents &= mask;
-
-		// Mask in new thing
-		registerContents |= thing;
-
-		// Change contents
-		if (commandHeight == LOWER) writeCommandLower(commandAddress, registerContents);
-		else writeCommandUpper(commandAddress, registerContents);
-	}
+	void bitMask(uint8_t commandAddress, bool commandHeight, uint8_t mask, uint8_t thing);
 };
 
 #endif
