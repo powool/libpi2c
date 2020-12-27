@@ -1,6 +1,9 @@
 testing: main.o aht20.o vcnl4040.o i2cbus.o
 	g++ -ggdb -rdynamic -funwind-tables -o testing $^ -lbcm2835
 
+clean:
+	rm *.o testing
+
 .cpp.o:
 	g++ -ggdb -rdynamic -funwind-tables -c $<
 
