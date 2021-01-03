@@ -24,12 +24,15 @@ void handler(int sig) {
 
 int main(int argc, const char **argv)
 {
+	i2cBus::list_devices();
 //	signal(SIGSEGV, handler);   // install our handler
 
 	try {
 		auto bcm = std::make_shared<bcm2835>();
 		auto i2c = std::make_shared<i2cBus>(bcm);
 		auto vcnl = std::make_shared<vcnl4040>(i2c);
+
+		i2c->list_connected_devices();
 
 		auto htSensor = std::make_shared<aht20>(i2c);
 		htSensor->readSensor();

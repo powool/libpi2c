@@ -1,5 +1,7 @@
 #include "vcnl4040.hpp"
 
+static auto dummy = vcnl4040::register_device();
+
 vcnl4040::vcnl4040(std::shared_ptr<i2cBus> bus_) : bus(bus_)
 {
 	if(!bus->connected(VCNL4040_ADDR))
@@ -276,20 +278,18 @@ uint16_t vcnl4040::readCommand(uint8_t commandCode) {
 	return (0); //Sensor did not respond
 #endif
 	uint8_t bytes[2];
-	bus->setTarget(VCNL4040_ADDR);
-	bus->readRegisterWithRestart(commandCode, bytes, 2);
+	bus->readRegisterWithRestart(VCNL4040_ADDR, commandCode, bytes, 2);
 
 	return ((uint16_t) bytes[1] << 8 | bytes[0]);
 }
 
 // Write two bytes to a given command code location (8 bits)
 bool vcnl4040::writeCommand(uint8_t commandCode, uint16_t value) {
-	bus->setTarget(VCNL4040_ADDR);
 	uint8_t bytes[3];
 	bytes[0] = commandCode;
 	bytes[1] = value;
 	bytes[2] = value>>8;
-	bus->write(bytes, 3);
+	bus->write(VCNL4040_ADDR, bytes, 3);
 
 	return false;
 }

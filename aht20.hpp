@@ -8,13 +8,13 @@
 #include "i2cbus.hpp"
 
 class aht20 {
-	const uint8_t AHTX0_I2CADDR_DEFAULT = 0x38;		// AHT default i2c address
-	const uint8_t AHTX0_CMD_CALIBRATE = 0xE1;		// Calibration command
-	const uint8_t AHTX0_CMD_TRIGGER = 0xAC;			// Trigger reading command
-	const uint8_t AHTX0_CMD_SOFTRESET = 0xBA;		// Soft reset command
-	const uint8_t AHTX0_STATUS_BUSY = 0x80;			// Status bit for busy
-	const uint8_t AHTX0_STATUS_CALIBRATED = 0x08;	// Status bit for calibrated
-	const uint16_t sensorID = 0x1020;
+	static const uint8_t AHTX0_I2CADDR_DEFAULT = 0x38;		// AHT default i2c address
+	static const uint8_t AHTX0_CMD_CALIBRATE = 0xE1;		// Calibration command
+	static const uint8_t AHTX0_CMD_TRIGGER = 0xAC;			// Trigger reading command
+	static const uint8_t AHTX0_CMD_SOFTRESET = 0xBA;		// Soft reset command
+	static const uint8_t AHTX0_STATUS_BUSY = 0x80;			// Status bit for busy
+	static const uint8_t AHTX0_STATUS_CALIBRATED = 0x08;	// Status bit for calibrated
+	static const uint16_t sensorID = 0x1020;
 
 	std::shared_ptr<i2cBus> bus;
 	float temperature;
@@ -26,6 +26,10 @@ class aht20 {
 	uint8_t getStatus(void);
 
 	public:
+
+	static bool register_device() {
+		return i2cBus::register_device(AHTX0_I2CADDR_DEFAULT, "aht20");
+	}
 
 	aht20(std::shared_ptr<i2cBus> bus_);
 

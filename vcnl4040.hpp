@@ -7,24 +7,24 @@
 #include "i2cbus.hpp"
 
 class vcnl4040 {
-	const bool LOWER = false;
-	const bool UPPER = true;
-	const uint8_t VCNL4040_ALS_CONF = 0x00;
-	const uint8_t VCNL4040_ALS_THDH = 0x01;
-	const uint8_t VCNL4040_ALS_THDL = 0x02;
-	const uint8_t VCNL4040_PS_CONF1 = 0x03;	// Lower
-	const uint8_t VCNL4040_PS_CONF2 = 0x03;	// Upper
-	const uint8_t VCNL4040_PS_CONF3 = 0x04;	// Lower
-	const uint8_t VCNL4040_PS_MS = 0x04;	// Upper
-	const uint8_t VCNL4040_PS_CANC = 0x05;
-	const uint8_t VCNL4040_PS_THDL = 0x06;
-	const uint8_t VCNL4040_PS_THDH = 0x07;
-	const uint8_t VCNL4040_PS_DATA = 0x08;
-	const uint8_t VCNL4040_ALS_DATA = 0x09;
-	const uint8_t VCNL4040_WHITE_DATA = 0x0A;
-	const uint8_t VCNL4040_INT_FLAG = 0x0B;	// Upper
-	const uint8_t VCNL4040_ID = 0x0C;
-	const uint8_t VCNL4040_ADDR = 0x60;		// 7-bit unshifted I2C address of VCNL4040
+	static const bool LOWER = false;
+	static const bool UPPER = true;
+	static const uint8_t VCNL4040_ALS_CONF = 0x00;
+	static const uint8_t VCNL4040_ALS_THDH = 0x01;
+	static const uint8_t VCNL4040_ALS_THDL = 0x02;
+	static const uint8_t VCNL4040_PS_CONF1 = 0x03;	// Lower
+	static const uint8_t VCNL4040_PS_CONF2 = 0x03;	// Upper
+	static const uint8_t VCNL4040_PS_CONF3 = 0x04;	// Lower
+	static const uint8_t VCNL4040_PS_MS = 0x04;	// Upper
+	static const uint8_t VCNL4040_PS_CANC = 0x05;
+	static const uint8_t VCNL4040_PS_THDL = 0x06;
+	static const uint8_t VCNL4040_PS_THDH = 0x07;
+	static const uint8_t VCNL4040_PS_DATA = 0x08;
+	static const uint8_t VCNL4040_ALS_DATA = 0x09;
+	static const uint8_t VCNL4040_WHITE_DATA = 0x0A;
+	static const uint8_t VCNL4040_INT_FLAG = 0x0B;	// Upper
+	static const uint8_t VCNL4040_ID = 0x0C;
+	static const uint8_t VCNL4040_ADDR = 0x60;		// 7-bit unshifted I2C address of VCNL4040
 	std::shared_ptr<i2cBus>	bus;
 public:
 
@@ -118,6 +118,9 @@ public:
 	static const uint8_t VCNL4040_INT_FLAG_CLOSE = (1 << 1);
 	static const uint8_t VCNL4040_INT_FLAG_AWAY = (1 << 0);
 
+	static bool register_device() {
+		return i2cBus::register_device(VCNL4040_ADDR, "vcn4040");
+	}
 
 	vcnl4040(std::shared_ptr<i2cBus> bus_);
 
