@@ -27,32 +27,44 @@ void watch_humidity(std::shared_ptr<i2cBus> i2c)
 {
 	auto htSensor = std::make_shared<aht20>(i2c);
 	while(true) {
-		htSensor->readSensor();
-		std::cout << "temperature=" << htSensor->getTemperature() << std::endl;
-		std::cout << "humidity=" << htSensor->getHumidity() << std::endl;
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+		try {
+			htSensor->readSensor();
+			std::cout << "temperature=" << htSensor->getTemperature() << std::endl;
+			std::cout << "humidity=" << htSensor->getHumidity() << std::endl;
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		} catch (i2cException e) {
+			std::cerr << "device disconnect: " << e.what() << std::endl;
+		}
+		std::this_thread::sleep_for(std::chrono::seconds(10));
 	}
 }
 
 void watch_proximity(std::shared_ptr<i2cBus> i2c)
 {
 	auto vcnl = std::make_shared<vcnl4040>(i2c);
-	vcnl->powerOnAmbient();
-	vcnl->powerOnProximity();
-	vcnl->setProxHighThreshold(10);
-	vcnl->setProxLowThreshold(5);
-	vcnl->enableProxLogicMode();
 	while(true) {
-		if (vcnl->isClose()) {
-			std::cout << "Oh so close!" << std::endl;
+		try {
+			vcnl->powerOnAmbient();
+			vcnl->powerOnProximity();
+			vcnl->setProxHighThreshold(10);
+			vcnl->setProxLowThreshold(5);
+			vcnl->enableProxLogicMode();
+			while(true) {
+				if (vcnl->isClose()) {
+					std::cout << "Oh so close!" << std::endl;
+				}
+				if (vcnl->isAway()) {
+					std::cout << "Oh so far!" << std::endl;
+				}
+				std::cout << "getProximity()=" << vcnl->getProximity() << std::endl;
+				std::cout << "getAmbient()=" << vcnl->getAmbient() << std::endl;
+				std::cout << "getWhite()=" << vcnl->getWhite() << std::endl;
+				std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+			}
+		} catch (i2cException e) {
+			std::cerr << "device disconnect: " << e.what() << std::endl;
 		}
-		if (vcnl->isAway()) {
-			std::cout << "Oh so far!" << std::endl;
-		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(1500));
-		std::cout << "getProximity()=" << vcnl->getProximity() << std::endl;
-		std::cout << "getAmbient()=" << vcnl->getAmbient() << std::endl;
-		std::cout << "getWhite()=" << vcnl->getWhite() << std::endl;
+		std::this_thread::sleep_for(std::chrono::seconds(10));
 	}
 }
 
