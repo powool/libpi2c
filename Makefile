@@ -1,5 +1,5 @@
 testing: i2cbus.o main.o aht20.o vcnl4040.o
-	g++ -ggdb -rdynamic -funwind-tables -o testing $^ -lbcm2835
+	g++ -ggdb -rdynamic -funwind-tables -o testing $^ -lbcm2835 -lpthread
 
 clean:
 	rm *.o testing

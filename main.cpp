@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include <iostream>
+#include <thread>
 #include <unistd.h>
 #include "i2cbus.hpp"
 #include "vcnl4040.hpp"
@@ -22,6 +23,39 @@ void handler(int sig) {
   exit(1);
 }
 
+void watch_humidity(std::shared_ptr<i2cBus> i2c)
+{
+	auto htSensor = std::make_shared<aht20>(i2c);
+	while(true) {
+		htSensor->readSensor();
+		std::cout << "temperature=" << htSensor->getTemperature() << std::endl;
+		std::cout << "humidity=" << htSensor->getHumidity() << std::endl;
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+	}
+}
+
+void watch_proximity(std::shared_ptr<i2cBus> i2c)
+{
+	auto vcnl = std::make_shared<vcnl4040>(i2c);
+	vcnl->powerOnAmbient();
+	vcnl->powerOnProximity();
+	vcnl->setProxHighThreshold(10);
+	vcnl->setProxLowThreshold(5);
+	vcnl->enableProxLogicMode();
+	while(true) {
+		if (vcnl->isClose()) {
+			std::cout << "Oh so close!" << std::endl;
+		}
+		if (vcnl->isAway()) {
+			std::cout << "Oh so far!" << std::endl;
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+		std::cout << "getProximity()=" << vcnl->getProximity() << std::endl;
+		std::cout << "getAmbient()=" << vcnl->getAmbient() << std::endl;
+		std::cout << "getWhite()=" << vcnl->getWhite() << std::endl;
+	}
+}
+
 int main(int argc, const char **argv)
 {
 	i2cBus::list_devices();
@@ -30,32 +64,12 @@ int main(int argc, const char **argv)
 	try {
 		auto bcm = std::make_shared<bcm2835>();
 		auto i2c = std::make_shared<i2cBus>(bcm);
-		auto vcnl = std::make_shared<vcnl4040>(i2c);
 
 		i2c->list_connected_devices();
 
-		auto htSensor = std::make_shared<aht20>(i2c);
-		htSensor->readSensor();
-		std::cout << "temperature=" << htSensor->getTemperature() << std::endl;
-		std::cout << "humidity=" << htSensor->getHumidity() << std::endl;
-
-		vcnl->powerOnAmbient();
-		vcnl->powerOnProximity();
-		vcnl->setProxHighThreshold(10);
-		vcnl->setProxLowThreshold(5);
-		vcnl->enableProxLogicMode();
-		while(true) {
-			if (vcnl->isClose()) {
-				std::cout << "Oh so close!" << std::endl;
-			}
-			if (vcnl->isAway()) {
-				std::cout << "Oh so far!" << std::endl;
-			}
-			sleep(2);
-			std::cout << "getProximity()=" << vcnl->getProximity() << std::endl;
-			std::cout << "getAmbient()=" << vcnl->getAmbient() << std::endl;
-			std::cout << "getWhite()=" << vcnl->getWhite() << std::endl;
-		}
+		auto humidity_thread = std::make_shared<std::thread>(watch_humidity, i2c);
+		auto proximity_thread = std::make_shared<std::thread>(watch_proximity, i2c);
+		std::this_thread::sleep_for(std::chrono::seconds(60));
 	} catch (i2cException e) {
 		std::cerr << "got exception: " << e.what() << std::endl;
 	}
