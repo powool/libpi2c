@@ -6,6 +6,7 @@
 #include <iostream>
 #include <thread>
 #include <unistd.h>
+#include "checkTerminate.hpp"
 #include "i2cbus.hpp"
 #include "vcnl4040.hpp"
 #include "aht20.hpp"
@@ -14,30 +15,6 @@ template<class T> void lockedLambda(std::mutex &m, T f) {
 	std::lock_guard<std::mutex> lock(m);
 	f();
 }
-
-class checkException : std::exception {
-private:
-        std::string     msg;
-public:
-        checkException(const std::string &e);
-        const char* what();
-};
-checkException::checkException(const std::string &e) {
-        msg = e;
-}
-const char* checkException::what() {
-        return msg.c_str();
-}
-
-bool dieFlag = false;
-void die(void) {
-	dieFlag = true;
-}
-
-void checkDeath(void) {
-	if(dieFlag) throw checkException("program shutdown");
-}
-
 
 void handler(int sig) {
   void *array[10];
@@ -52,10 +29,6 @@ void handler(int sig) {
   exit(1);
 }
 
-void interrupt(int sig) {
-	die();
-}
-
 std::mutex ioLock;
 
 void watch_humidity(std::shared_ptr<i2cBus> i2c)
@@ -63,7 +36,7 @@ void watch_humidity(std::shared_ptr<i2cBus> i2c)
 	auto htSensor = std::make_shared<aht20>(i2c);
 	while(true) {
 		try {
-			checkDeath();
+			checkTerminate::check();
 			htSensor->readSensor();
 			lockedLambda(ioLock, [&] {
 					std::cout << "temperature=" << htSensor->getTemperature() << std::endl;
@@ -90,7 +63,7 @@ void watch_proximity(std::shared_ptr<i2cBus> i2c)
 			vcnl->setProxLowThreshold(5);
 			vcnl->enableProxLogicMode();
 			while(true) {
-				checkDeath();
+				checkTerminate::check();
 				if (vcnl->isClose()) {
 					std::cout << "Oh so close!" << std::endl;
 				}
@@ -116,19 +89,19 @@ int main(int argc, const char **argv)
 {
 	i2cBus::list_devices();
 //	signal(SIGSEGV, handler);   // install our handler
-	signal(SIGINT, interrupt);
+	signal(SIGINT, checkTerminate::interrupt);
 
 	auto bcm = std::make_shared<bcm2835>();
 	auto i2c = std::make_shared<i2cBus>(bcm);
+
+	i2c->list_connected_devices();
 
 	auto humidity_thread = std::make_shared<std::thread>(watch_humidity, i2c);
 	auto proximity_thread = std::make_shared<std::thread>(watch_proximity, i2c);
 
 	try {
-		i2c->list_connected_devices();
-
 		while(true) {
-			checkDeath();
+			checkTerminate::check();
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 		}
 	} catch (i2cException e) {

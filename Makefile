@@ -1,4 +1,4 @@
-testing: i2cbus.o main.o aht20.o vcnl4040.o
+testing: i2cbus.o main.o aht20.o vcnl4040.o checkTerminate.o
 	g++ -ggdb -rdynamic -funwind-tables -o testing $^ -lbcm2835 -lpthread
 
 clean:
@@ -17,3 +17,5 @@ aht20.o: aht20.cpp aht20.hpp
 i2cbus.o: i2cbus.cpp i2cbus.hpp
 
 vcnl4040.o: vcnl4040.cpp vcnl4040.hpp
+
+checkTerminate.o: checkTerminate.cpp checkTerminate.hpp
