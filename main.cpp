@@ -10,6 +10,11 @@
 #include "vcnl4040.hpp"
 #include "aht20.hpp"
 
+template<class T> void lockedLambda(std::mutex &m, T f) {
+	std::lock_guard<std::mutex> lock(m);
+	f();
+}
+
 class checkException : std::exception {
 private:
         std::string     msg;
@@ -51,6 +56,8 @@ void interrupt(int sig) {
 	die();
 }
 
+std::mutex ioLock;
+
 void watch_humidity(std::shared_ptr<i2cBus> i2c)
 {
 	auto htSensor = std::make_shared<aht20>(i2c);
@@ -58,8 +65,9 @@ void watch_humidity(std::shared_ptr<i2cBus> i2c)
 		try {
 			checkDeath();
 			htSensor->readSensor();
-			std::cout << "temperature=" << htSensor->getTemperature() << std::endl;
-			std::cout << "humidity=" << htSensor->getHumidity() << std::endl;
+			lockedLambda(ioLock, [&] {
+					std::cout << "temperature=" << htSensor->getTemperature() << std::endl;
+					std::cout << "humidity=" << htSensor->getHumidity() << std::endl;});
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 		} catch (i2cException e) {
 			std::cerr << "device disconnect: " << e.what() << std::endl;
