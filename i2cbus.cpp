@@ -1,5 +1,6 @@
 #include "i2cbus.hpp"
 #include <iostream>
+#include <sstream>
 
 std::vector<device_entry> i2cBus::registered_devices;
 
@@ -62,8 +63,11 @@ void i2cBus::write(uint8_t targetAddress, const uint8_t ch) {
 void i2cBus::write(uint8_t targetAddress, const uint8_t *buf, uint32_t len) {
 	const std::lock_guard<std::mutex> lock(mutex);
 	bcm2835_i2c_setSlaveAddress(targetAddress);
-	if(bcm2835_i2c_write(const_cast<char *>(reinterpret_cast<const char *>(buf)), len) != BCM2835_I2C_REASON_OK)
-		throw i2cException("bcm2835_i2c_write failed");
+	if(bcm2835_i2c_write(const_cast<char *>(reinterpret_cast<const char *>(buf)), len) != BCM2835_I2C_REASON_OK) {
+		std::stringstream s;
+		s << "i2cBus::write failed on target " << (uint16_t) targetAddress;
+		throw i2cException(s.str());
+	}
 }
 
 void i2cBus::read(uint8_t targetAddress, uint8_t *buf) {
@@ -73,16 +77,22 @@ void i2cBus::read(uint8_t targetAddress, uint8_t *buf) {
 void i2cBus::read(uint8_t targetAddress, uint8_t *buf, uint32_t len) {
 	const std::lock_guard<std::mutex> lock(mutex);
 	bcm2835_i2c_setSlaveAddress(targetAddress);
-	if(bcm2835_i2c_read(const_cast<char *>(reinterpret_cast<const char *>(buf)), len) != BCM2835_I2C_REASON_OK)
-		throw i2cException("bcm2835_i2c_write failed");
+	if(bcm2835_i2c_read(const_cast<char *>(reinterpret_cast<const char *>(buf)), len) != BCM2835_I2C_REASON_OK) {
+		std::stringstream s;
+		s << "i2cBus::read failed on target " << (uint16_t) targetAddress;
+		throw i2cException(s.str());
+	}
 }
 
 void i2cBus::readRegisterWithRestart(uint8_t targetAddress, uint8_t register_, uint8_t *buf, uint32_t len) {
 	const std::lock_guard<std::mutex> lock(mutex);
 	bcm2835_i2c_setSlaveAddress(targetAddress);
 	auto rc = bcm2835_i2c_read_register_rs(reinterpret_cast<char *>(&register_), reinterpret_cast<char *>(buf), len);
-	if(rc != BCM2835_I2C_REASON_OK)
-		throw i2cException("bcm2835_i2c_read_register_rs failed");
+	if(rc != BCM2835_I2C_REASON_OK) {
+		std::stringstream s;
+		s << "i2cBus::readRegisterWithRestart failed on target " << (uint16_t) targetAddress;
+		throw i2cException(s.str());
+	}
 }
 
 bool i2cBus::connected(uint8_t targetAddress) {
