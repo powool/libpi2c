@@ -34,7 +34,7 @@ bool i2cBus::register_device(uint8_t address, const char *name)
 void i2cBus::list_devices()
 {
 	for(auto const &dv: registered_devices) {
-		std::cout << "device " << dv.name << " at address " << int(dv.address) << std::endl;
+		std::cout << "device " << dv.name << " at address " << std::hex << std::showbase << int(dv.address) << std::endl << std::dec;
 	}
 }
 
@@ -42,7 +42,7 @@ void i2cBus::list_connected_devices()
 {
 	for(auto const &dv: registered_devices) {
 		if(connected(dv.address))
-			std::cout << "device " << dv.name << " is connected at address " << int(dv.address) << std::endl;
+			std::cout << "device " << dv.name << " is connected at address " << std::hex << std::showbase << int(dv.address) << std::endl << std::dec;
 	}
 }
 
