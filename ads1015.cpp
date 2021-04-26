@@ -1,24 +1,12 @@
-#include "ds3502.hpp"
+#include "ads1015.hpp"
 
-static auto dummy = ds3502::register_device();
+static auto dummy = ads1015::register_device();
 
-ds3502::ds3502(std::shared_ptr<i2cBus> bus_) : bus(bus_) {
-	bus->writeRegister8(I2CADDR_DEFAULT, CONTROL, MODE1);
+ads1015::ads1015(std::shared_ptr<i2cBus> bus_) : bus(bus_) {
+	auto config = | AIN0_TO_GND | FS_6144V | CONTINUOUS
+	bus->writeRegister16(I2CADDR_DEFAULT, CONFIG, MODE1);
 }
 
-void ds3502::setWiper(uint8_t wiper) {
-	bus->writeRegister8(I2CADDR_DEFAULT, WIPER, wiper);
-}
-
-void ds3502::setWiperDefault(uint8_t wiper) {
-	auto currentWiper = getWiper();
-	bus->writeRegister8(I2CADDR_DEFAULT, CONTROL, MODE0);
-	bus->writeRegister8(I2CADDR_DEFAULT, WIPER, wiper);
-	bus->writeRegister8(I2CADDR_DEFAULT, CONTROL, MODE1);
-	bus->writeRegister8(I2CADDR_DEFAULT, WIPER, currentWiper);
-}
-
-uint8_t ds3502::getWiper() {
-	auto wiper = bus->readRegister8(I2CADDR_DEFAULT, WIPER);
-	return wiper;
+float ads1015::get(void) {
+	bus->readRegister16(I2CADDR_DEFAULT, WIPER, wiper);
 }
