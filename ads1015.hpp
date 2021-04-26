@@ -1,5 +1,5 @@
-#ifndef _DS3502_H
-#define _DS3502_H
+#ifndef _ADS1015_H
+#define _ADS1015_H
 
 #include <exception>
 #include <memory>
@@ -8,7 +8,7 @@
 #include "i2cbus.hpp"
 
 
-class ds3502 {
+class ads1015 {
 	static const uint8_t I2CADDR_DEFAULT = 0x48;
 	static const uint8_t CONVERSION  = 0x00;
 	static const uint8_t CONFIG  = 0x01;

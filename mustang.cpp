@@ -98,22 +98,22 @@ float engineCoolantTemperature = 0.0;	// in degrees F
 
 void readTemp(std::shared_ptr<i2cBus> i2c, std::ofstream *screen)
 {
-	auto tempSensor = std::make_shared<aht20>(i2c);
+	auto tempSensor = std::make_shared<ads1015>(i2c);
 	while(true) {
 		try {
 			checkTerminate::check();
-			tempSensor->readSensor();
+//			tempSensor->readSensor();
 			lockedLambda(ioLock, [&] {
 					*screen << "\x1b[1;1H";		// row 1, col 1
 					*screen << "\x1b[31;1m";	// red
-					*screen << "temperature=" << tempSensor->getTemperature() << "\x1b[0K" << std::endl;
+//					*screen << "temperature=" << tempSensor->getTemperature() << "\x1b[0K" << std::endl;
 				});
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 		} catch (i2cException e) {
-			std::cerr << "humidity device disconnect: " << e.what() << std::endl;
+			std::cerr << "ADC device disconnect: " << e.what() << std::endl;
 			std::this_thread::sleep_for(std::chrono::seconds(10));
 		} catch (checkException e) {
-			std::cerr << "humidity device shutdown: " << e.what() << std::endl;
+			std::cerr << "ADC device shutdown: " << e.what() << std::endl;
 			return;
 		}
 	}
