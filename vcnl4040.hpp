@@ -119,7 +119,7 @@ public:
 	static const uint8_t VCNL4040_INT_FLAG_AWAY = (1 << 0);
 
 	static bool register_device() {
-		return i2cBus::register_device(VCNL4040_ADDR, "vcn4040");
+		return i2cBus::register_device(VCNL4040_ADDR, "vcn4040", "proximity sensor");
 	}
 
 	vcnl4040(std::shared_ptr<i2cBus> bus_);
