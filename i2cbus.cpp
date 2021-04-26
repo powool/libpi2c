@@ -25,16 +25,16 @@ bcm2835::~bcm2835() {
 i2cBus::i2cBus(std::shared_ptr<bcm2835> bcm_) : bcm(bcm_) {
 }
 
-bool i2cBus::register_device(uint8_t address, const char *name)
+bool i2cBus::register_device(uint8_t address, const char *name, const char *description)
 {
-	registered_devices.push_back(device_entry(address, name));
+	registered_devices.push_back(device_entry(address, name, description));
 	return true;
 }
 
 void i2cBus::list_devices()
 {
 	for(auto const &dv: registered_devices) {
-		std::cout << "device " << dv.name << " at address " << std::hex << std::showbase << int(dv.address) << std::endl << std::dec;
+		std::cout << "device driver " << dv.name << " at address " << std::hex << std::showbase << int(dv.address) << std::endl << std::dec;
 	}
 }
 
@@ -65,7 +65,7 @@ void i2cBus::write(uint8_t targetAddress, const uint8_t *buf, uint32_t len) {
 	bcm2835_i2c_setSlaveAddress(targetAddress);
 	if(bcm2835_i2c_write(const_cast<char *>(reinterpret_cast<const char *>(buf)), len) != BCM2835_I2C_REASON_OK) {
 		std::stringstream s;
-		s << "i2cBus::write failed on target " << (uint16_t) targetAddress;
+		s << "i2cBus::write failed on target " << std::hex << std::showbase << (uint16_t) targetAddress << std::dec;
 		throw i2cException(s.str());
 	}
 }
@@ -79,9 +79,36 @@ void i2cBus::read(uint8_t targetAddress, uint8_t *buf, uint32_t len) {
 	bcm2835_i2c_setSlaveAddress(targetAddress);
 	if(bcm2835_i2c_read(const_cast<char *>(reinterpret_cast<const char *>(buf)), len) != BCM2835_I2C_REASON_OK) {
 		std::stringstream s;
-		s << "i2cBus::read failed on target " << (uint16_t) targetAddress;
+		s << "i2cBus::read failed on target " << std::hex << std::showbase << (uint16_t) targetAddress << std::dec;
 		throw i2cException(s.str());
 	}
+}
+
+void i2cBus::writeRegister8(uint8_t targetAddress, uint8_t register_, uint8_t data) {
+	uint8_t buf[2];
+	buf[0] = register_;
+	buf[1] = data;
+	write(targetAddress, buf, 2);
+}
+
+void i2cBus::writeRegister16(uint8_t targetAddress, uint8_t register_, uint16_t data) {
+	uint8_t buf[3];
+	buf[0] = register_;
+	buf[1] = data >> 8;
+	buf[2] = data;
+	write(targetAddress, buf, 3);
+}
+
+uint8_t i2cBus::readRegister8(uint8_t targetAddress, uint8_t register_) {
+	uint8_t buffer;
+	readRegisterWithRestart(targetAddress, register_, &buffer, 1);
+	return buffer;
+}
+
+uint16_t i2cBus::readRegister16(uint8_t targetAddress, uint8_t register_) {
+	uint8_t buffer[2];
+	readRegisterWithRestart(targetAddress, register_, &buffer[0], 2);
+	return buffer[0] << 8 | buffer[1];
 }
 
 void i2cBus::readRegisterWithRestart(uint8_t targetAddress, uint8_t register_, uint8_t *buf, uint32_t len) {
@@ -90,7 +117,7 @@ void i2cBus::readRegisterWithRestart(uint8_t targetAddress, uint8_t register_, u
 	auto rc = bcm2835_i2c_read_register_rs(reinterpret_cast<char *>(&register_), reinterpret_cast<char *>(buf), len);
 	if(rc != BCM2835_I2C_REASON_OK) {
 		std::stringstream s;
-		s << "i2cBus::readRegisterWithRestart failed on target " << (uint16_t) targetAddress;
+		s << "i2cBus::readRegisterWithRestart failed on target " << std::hex << std::showbase << (uint16_t) targetAddress << std::dec;
 		throw i2cException(s.str());
 	}
 }
@@ -99,7 +126,7 @@ bool i2cBus::connected(uint8_t targetAddress) {
 	try {
 		uint8_t ch;    // unused
 		write(targetAddress, &ch, 0);
-	} catch(std::exception e) {
+	} catch(i2cException e) {
 		return false;
 	}
 	return true;

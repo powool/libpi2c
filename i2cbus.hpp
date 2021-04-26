@@ -11,7 +11,9 @@
 struct device_entry {
 	uint8_t		address;
 	const char	*name;
-	device_entry(uint8_t address_, const char *name_) : address(address_), name(name_) {;}
+	const char	*description;
+	device_entry(uint8_t address_, const char *name_, const char *description_ = nullptr) :
+		address(address_), name(name_), description(description_) {;}
 };
 
 
@@ -38,7 +40,7 @@ class i2cBus {
 public:
 	i2cBus(std::shared_ptr<bcm2835> bcm_);
 
-	static bool register_device(uint8_t address, const char *name);
+	static bool register_device(uint8_t address, const char *name, const char *description = nullptr);
 	static void list_devices();
 	void list_connected_devices();
 
@@ -51,6 +53,12 @@ public:
 	void read(uint8_t targetAddress, uint8_t *buf);
 
 	void read(uint8_t targetAddress, uint8_t *buf, uint32_t len);
+
+	void writeRegister8(uint8_t targetAddress, uint8_t register_, uint8_t buffer);
+	void writeRegister16(uint8_t targetAddress, uint8_t register_, uint16_t buffer);
+
+	uint8_t readRegister8(uint8_t targetAddress, uint8_t register_);
+	uint16_t readRegister16(uint8_t targetAddress, uint8_t register_);
 
 	void readRegisterWithRestart(uint8_t targetAddress, uint8_t register_, uint8_t *buf, uint32_t len);
 
