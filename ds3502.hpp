@@ -16,11 +16,12 @@ class ds3502 {
 	static const uint8_t MODE1 = 0x80;
 
 	std::shared_ptr<i2cBus> bus;
+	int deviceIndex;
 public:
 	static bool register_device() {
 		return i2cBus::register_device(I2CADDR_DEFAULT, "ds3502", "digital potentiometer");
 	}
-	ds3502(std::shared_ptr<i2cBus> bus_);
+	ds3502(std::shared_ptr<i2cBus> bus_, int deviceIndex);
 
 	uint8_t getWiper(void);
 	void setWiper(uint8_t new_wiper_value);

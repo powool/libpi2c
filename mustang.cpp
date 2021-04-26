@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include "checkTerminate.hpp"
 #include "i2cbus.hpp"
-#include "aht20.hpp"
+#include "ads1015.hpp"
 #include "ds3502.hpp"
 
 #include <fstream>
@@ -122,7 +122,7 @@ void readTemp(std::shared_ptr<i2cBus> i2c, std::ofstream *screen)
 void fanController(std::shared_ptr<i2cBus> i2c)
 {
 	// XXX need two:
-	auto digitalPotentiometer = std::make_shared<ds3502>(i2c);
+	auto digitalPotentiometer = std::make_shared<ds3502>(i2c, 0);
 	int fanSpeed = 0;	// 0-127
 	bool fanShouldRun = false;
 	while(true) {
@@ -161,7 +161,7 @@ void fanController(std::shared_ptr<i2cBus> i2c)
 void waterPumpController(std::shared_ptr<i2cBus> i2c)
 {
 	// XXX need two:
-	auto digitalPotentiometer = std::make_shared<ds3502>(i2c);
+	auto digitalPotentiometer = std::make_shared<ds3502>(i2c, 1);
 	int waterPumpSpeed = 0;	// 0-127
 	bool waterPumpShouldRun = false;
 	while(true) {
