@@ -3,7 +3,7 @@ all: testing mustang
 testing: i2cbus.o main.o aht20.o checkTerminate.o ssd1306.o render.o lsm6ds33.o pca9685.o tca9548a.o tmp117.o vcnl4040.o ds3502.o
 	g++ -ggdb -rdynamic -funwind-tables -o $@ $^ -lbcm2835 -lpthread
 
-mustang: mustang.o i2cbus.o checkTerminate.o ds3502.o aht20.o
+mustang: mustang.o i2cbus.o checkTerminate.o ds3502.o ads1015.o
 	g++ -ggdb -rdynamic -funwind-tables -o $@ $^ -lbcm2835 -lpthread
 
 clean:
