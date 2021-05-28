@@ -94,6 +94,7 @@ float getTemp(float volts)
 	return temp;
 }
 
+// want std::atomic<float>, but available yet
 float engineCoolantTemperature = 0.0;	// in degrees F
 
 void readTemp(std::shared_ptr<i2cBus> i2c, std::ofstream *screen)
@@ -102,11 +103,12 @@ void readTemp(std::shared_ptr<i2cBus> i2c, std::ofstream *screen)
 	while(true) {
 		try {
 			checkTerminate::check();
-//			tempSensor->readSensor();
+			auto adc = tempSensor->get();
+			engineCoolantTemperature = getTemp(adc);
 			lockedLambda(ioLock, [&] {
 					*screen << "\x1b[1;1H";		// row 1, col 1
 					*screen << "\x1b[31;1m";	// red
-//					*screen << "temperature=" << tempSensor->getTemperature() << "\x1b[0K" << std::endl;
+					*screen << "temperature=" << engineCoolantTemperature << "\u00B0F (adc=" << adc << "V)" << "\x1b[0K" << std::endl;
 				});
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 		} catch (i2cException e) {
@@ -119,9 +121,8 @@ void readTemp(std::shared_ptr<i2cBus> i2c, std::ofstream *screen)
 	}
 }
 
-void fanController(std::shared_ptr<i2cBus> i2c)
+void fanController(std::shared_ptr<i2cBus> i2c, std::ofstream *screen)
 {
-	// XXX need two:
 	auto digitalPotentiometer = std::make_shared<ds3502>(i2c, 0);
 	int fanSpeed = 0;	// 0-127
 	bool fanShouldRun = false;
@@ -147,6 +148,12 @@ void fanController(std::shared_ptr<i2cBus> i2c)
 			// set fan speed here
 			digitalPotentiometer->setWiper(fanSpeed);
 
+			lockedLambda(ioLock, [&] {
+					*screen << "\x1b[2;1H";		// row 1, col 1
+					*screen << "\x1b[31;1m";	// red
+					*screen << "Fan " << (fanShouldRun ? "running" : "off") << " speed: " << fanSpeed << "\x1b[0K" << std::endl;
+				});
+
 			std::this_thread::sleep_for(std::chrono::milliseconds(20));
 		} catch (i2cException e) {
 			std::cerr << "digital potentiometer device disconnect: " << e.what() << std::endl;
@@ -158,9 +165,8 @@ void fanController(std::shared_ptr<i2cBus> i2c)
 	}
 }
 
-void waterPumpController(std::shared_ptr<i2cBus> i2c)
+void waterPumpController(std::shared_ptr<i2cBus> i2c, std::ofstream *screen)
 {
-	// XXX need two:
 	auto digitalPotentiometer = std::make_shared<ds3502>(i2c, 1);
 	int waterPumpSpeed = 0;	// 0-127
 	bool waterPumpShouldRun = false;
@@ -185,6 +191,12 @@ void waterPumpController(std::shared_ptr<i2cBus> i2c)
 
 			// set fan speed here
 			digitalPotentiometer->setWiper(waterPumpSpeed);
+
+			lockedLambda(ioLock, [&] {
+					*screen << "\x1b[3;1H";		// row 1, col 1
+					*screen << "\x1b[31;1m";	// red
+					*screen << "Water pump " << (waterPumpShouldRun ? "running" : "idle") << " speed: " << waterPumpSpeed << "\x1b[0K" << std::endl;
+				});
 
 			std::this_thread::sleep_for(std::chrono::milliseconds(20));
 		} catch (i2cException e) {
@@ -218,8 +230,8 @@ int main(int argc, const char **argv)
 	screen << "MUSTANG";
 
 	auto readTempThread = std::make_shared<std::thread>(readTemp, i2c, &screen);
-	auto fanThread = std::make_shared<std::thread>(fanController, i2c);
-	auto waterPumpThread = std::make_shared<std::thread>(waterPumpController, i2c);
+	auto fanThread = std::make_shared<std::thread>(fanController, i2c, &screen);
+	auto waterPumpThread = std::make_shared<std::thread>(waterPumpController, i2c, &screen);
 
 
 	try {
