@@ -76,7 +76,7 @@ float getTemp(float volts)
 		4.91, -40
 	};
 
-	const int rows = sizeof(volts2temp) / 2;
+	const int rows = sizeof(volts2temp) / sizeof(float) / 2;
 
 	if(volts < .12) volts = .12;
 	if(volts > 4.89) volts=4.89;
