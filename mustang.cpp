@@ -94,15 +94,16 @@ float getTemp(float volts)
 	return temp;
 }
 
-// want std::atomic<float>, but available yet
+// want std::atomic<float>, but not available yet
 float engineCoolantTemperature = 0.0;	// in degrees F
 
 void readTemp(std::shared_ptr<i2cBus> i2c, std::ofstream *screen)
 {
-	auto tempSensor = std::make_shared<ads1015>(i2c);
+	std::shared_ptr<ads1015>	tempSensor;
 	while(true) {
 		try {
 			checkTerminate::check();
+			if (!tempSensor) tempSensor = std::make_shared<ads1015>(i2c);
 			auto adc = tempSensor->get();
 			engineCoolantTemperature = getTemp(adc);
 			lockedLambda(ioLock, [&] {
@@ -114,6 +115,7 @@ void readTemp(std::shared_ptr<i2cBus> i2c, std::ofstream *screen)
 		} catch (i2cException e) {
 			std::cerr << "ADC device disconnect: " << e.what() << std::endl;
 			std::this_thread::sleep_for(std::chrono::seconds(10));
+			tempSensor = nullptr;	// disconnect so we can reconnect
 		} catch (checkException e) {
 			std::cerr << "ADC device shutdown: " << e.what() << std::endl;
 			return;
@@ -123,12 +125,13 @@ void readTemp(std::shared_ptr<i2cBus> i2c, std::ofstream *screen)
 
 void fanController(std::shared_ptr<i2cBus> i2c, std::ofstream *screen)
 {
-	auto digitalPotentiometer = std::make_shared<ds3502>(i2c, 0);
+	std::shared_ptr<ds3502>	digitalPotentiometer;
 	int fanSpeed = 0;	// 0-127
 	bool fanShouldRun = false;
 	while(true) {
 		try {
 			checkTerminate::check();
+			if (!digitalPotentiometer) digitalPotentiometer = std::make_shared<ds3502>(i2c, 0);
 
 			if (engineCoolantTemperature < 175) {
 				fanShouldRun = false;
@@ -158,6 +161,7 @@ void fanController(std::shared_ptr<i2cBus> i2c, std::ofstream *screen)
 		} catch (i2cException e) {
 			std::cerr << "digital potentiometer device disconnect: " << e.what() << std::endl;
 			std::this_thread::sleep_for(std::chrono::seconds(5));
+			digitalPotentiometer = nullptr;
 		} catch (checkException e) {
 			std::cerr << "Fan control thread shutdown: " << e.what() << std::endl;
 			return;
@@ -167,19 +171,20 @@ void fanController(std::shared_ptr<i2cBus> i2c, std::ofstream *screen)
 
 void waterPumpController(std::shared_ptr<i2cBus> i2c, std::ofstream *screen)
 {
-	auto digitalPotentiometer = std::make_shared<ds3502>(i2c, 1);
+	std::shared_ptr<ds3502>	digitalPotentiometer;
 	int waterPumpSpeed = 0;	// 0-127
 	bool waterPumpShouldRun = false;
 	while(true) {
 		try {
 			checkTerminate::check();
+			if (!digitalPotentiometer) digitalPotentiometer = std::make_shared<ds3502>(i2c, 1);
 
 			if (engineCoolantTemperature < 175) {
 				waterPumpShouldRun = false;
 			} else if (engineCoolantTemperature > 185) {
 				waterPumpShouldRun = true;
 			}
-				
+
 			if (waterPumpShouldRun) {
 				waterPumpSpeed += 1;
 			} else {
@@ -202,6 +207,7 @@ void waterPumpController(std::shared_ptr<i2cBus> i2c, std::ofstream *screen)
 		} catch (i2cException e) {
 			std::cerr << "digital potentiometer device disconnect: " << e.what() << std::endl;
 			std::this_thread::sleep_for(std::chrono::seconds(5));
+			digitalPotentiometer = nullptr;
 		} catch (checkException e) {
 			std::cerr << "Water pump control thread shutdown: " << e.what() << std::endl;
 			return;
